@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Vendas - Lanchonete{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos gerais para a tela de vendas */
+    #carrinho-lista {
+        list-style-type: none;
+        padding: 0;
+    }
+    #carrinho-lista li {
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .produto-btn {
+        width: 180px; /* Aumentado para tablets */
+        height: 120px; /* Aumentado para tablets */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        margin: 5px;
+        font-size: 18px; /* Fonte maior para tablets */
+    }
+    .produto-btn span {
+        font-size: 18px; /* Fonte maior para tablets */
+        font-weight: bold;
+    }
+    .produto-btn small {
+        font-size: 16px; /* Fonte maior para tablets */
+        color: #555;
+    }
+    .produto-btn.marcado {
+        background-color: #28a745;
+        color: white;
+    }
+    #vendas-marcadas {
+        margin-top: 20px;
+    }
+    #vendas-marcadas ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    #vendas-marcadas li {
+        margin-bottom: 10px;
+    }
+    #vendas-marcadas button {
+        width: 100%;
+        text-align: left;
+    }
+
+    /* Ajustes para tablets */
+    @media (max-width: 1024px) {
+        .produto-btn {
+            width: 160px; /* Ajuste para tablets menores */
+            height: 110px;
+            font-size: 16px;
+        }
+        .produto-btn span {
+            font-size: 16px;
+        }
+        .produto-btn small {
+            font-size: 14px;
+        }
+        .form-control {
+            font-size: 16px; /* Aumentar fonte dos inputs */
+            padding: 10px; /* Aumentar padding para facilitar o toque */
+        }
+        .btn {
+            font-size: 16px; /* Aumentar fonte dos botões */
+            padding: 10px 15px; /* Aumentar padding dos botões */
+        }
+        .card-body {
+            padding: 15px; /* Aumentar padding interno dos cards */
+        }
+    }
+
+    /* Ajustes para telas muito pequenas (smartphones) */
+    @media (max-width: 768px) {
+        .produto-btn {
+            width: 140px;
+            height: 100px;
+            font-size: 14px;
+        }
+        .produto-btn span {
+            font-size: 14px;
+        }
+        .produto-btn small {
+            font-size: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-4">Vendas</h1>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <label for="cliente" class="form-label">Nome do Cliente:</label>
+                <input type="text" id="cliente" class="form-control mb-3" placeholder="Digite o nome do cliente">
+                
+                <h5 class="card-title">Produtos Disponíveis</h5>
+                <div id="produtos-container" class="d-flex flex-wrap gap-2">
+                    {% for produto in produtos %}
+                        <button class="btn btn-outline-primary produto-btn" 
+                                onclick="adicionarAoCarrinho({{ produto.id }}, '{{ produto.nome }}', {{ produto.preco }}, {{ produto.quantidade }}, this)">
+                            <span>{{ produto.nome }}</span>
+                            <small>R$ {{ "%.2f"|format(produto.preco) }}</small>
+                        </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Carrinho</h5>
+            </div>
+            <div class="card-body">
+                <ul id="carrinho-lista"></ul>
+                <hr>
+                <h5>Total: R$ <span id="total">0.00</span></h5>
+                
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success" onclick="finalizarVenda()">
+                        <i class="bi bi-check-circle"></i> Finalizar Venda
+                    </button>
+                    <button class="btn btn-warning" onclick="limparCarrinho()">
+                        <i class="bi bi-trash"></i> Limpar Carrinho
+                    </button>
+                    <button class="btn btn-info" onclick="marcarVenda()">
+                        <i class="bi bi-bookmark"></i> Marcar Venda
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Vendas Marcadas -->
+        <div id="vendas-marcadas" class="mt-4">
+            <h5>Vendas Marcadas</h5>
+            <ul id="lista-vendas-marcadas" class="list-group">
+                <!-- As vendas marcadas serão exibidas aqui -->
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let carrinho = [];
+    let total = 0;
+    let vendaMarcadaIndex = null; // Índice da venda marcada carregada
+
+    // Função para adicionar produto ao carrinho
+    function adicionarAoCarrinho(id, nome, preco, quantidadeDisponivel, botao) {
+        const item = carrinho.find(item => item.id === id);
+        if (item) {
+            if (item.quantidade >= quantidadeDisponivel) {
+                alert("Quantidade máxima atingida!");
+                return;
+            }
+            item.quantidade += 1;
+        } else {
+            if (quantidadeDisponivel <= 0) {
+                alert("Produto sem estoque!");
+                return;
+            }
+            carrinho.push({ id, nome, preco, quantidade: 1 });
+        }
+        total += preco;
+        atualizarCarrinho();
+
+        // Marca o botão como selecionado
+        botao.classList.add('marcado');
+    }
+
+    // Função para atualizar o carrinho
+    function atualizarCarrinho() {
+        const carrinhoLista = document.getElementById('carrinho-lista');
+        const totalElement = document.getElementById('total');
+        
+        carrinhoLista.innerHTML = '';
+        carrinho.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${item.nome}</strong><br>
+                        <small>R$ ${item.preco.toFixed(2)} x ${item.quantidade}</small>
+                    </div>
+                    <button class="btn btn-sm btn-danger" onclick="removerItem(${index})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            carrinhoLista.appendChild(li);
+        });
+        
+        totalElement.textContent = total.toFixed(2);
+    }
+
+    // Função para remover item do carrinho
+    function removerItem(index) {
+        const item = carrinho[index];
+        total -= item.preco * item.quantidade;
+        carrinho.splice(index, 1);
+        atualizarCarrinho();
+
+        // Remove a marcação do botão correspondente
+        const botao = document.querySelector(`.produto-btn[onclick*="'${item.id}'"]`);
+        if (botao) {
+            botao.classList.remove('marcado');
+        }
+    }
+
+    // Função para finalizar a venda
+    function finalizarVenda() {
+        if (carrinho.length === 0) {
+            alert("O carrinho está vazio!");
+            return;
+        }
+        
+        const cliente = document.getElementById('cliente').value;
+        if (!cliente) {
+            alert("Digite o nome do cliente!");
+            return;
+        }
+
+        fetch('/finalizar_venda', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                cliente, 
+                itens_vendidos: carrinho 
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Venda finalizada com sucesso!");
+
+                // Se a venda foi carregada de uma venda marcada, remove-a do localStorage
+                if (vendaMarcadaIndex !== null) {
+                    removerVendaMarcada(vendaMarcadaIndex);
+                }
+
+                carrinho = [];
+                total = 0;
+                atualizarCarrinho();
+                document.getElementById('cliente').value = '';
+                window.location.reload();  // Recarregar a página para atualizar o estoque
+            } else {
+                alert("Erro ao finalizar venda: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert("Erro ao processar a venda");
+        });
+    }
+
+    // Função para limpar o carrinho
+    function limparCarrinho() {
+        carrinho = [];
+        total = 0;
+        atualizarCarrinho();
+
+        // Remove a marcação de todos os botões
+        document.querySelectorAll('.produto-btn.marcado').forEach(botao => {
+            botao.classList.remove('marcado');
+        });
+
+        // Reseta o índice da venda marcada carregada
+        vendaMarcadaIndex = null;
+    }
+
+    // Função para marcar a venda atual
+    function marcarVenda() {
+        const cliente = document.getElementById('cliente').value;
+        if (!cliente) {
+            alert("Digite o nome do cliente antes de marcar a venda!");
+            return;
+        }
+
+        if (carrinho.length === 0) {
+            alert("Adicione itens ao carrinho antes de marcar a venda!");
+            return;
+        }
+
+        // Cria um objeto representando a venda marcada
+        const vendaMarcada = {
+            cliente: cliente,
+            itens: [...carrinho] // Copia os itens do carrinho
+        };
+
+        // Recupera as vendas marcadas existentes ou inicializa um array vazio
+        let vendasMarcadas = JSON.parse(localStorage.getItem('vendasMarcadas')) || [];
+
+        // Adiciona a nova venda marcada ao array
+        vendasMarcadas.push(vendaMarcada);
+
+        // Salva o array atualizado no localStorage
+        localStorage.setItem('vendasMarcadas', JSON.stringify(vendasMarcadas));
+
+        // Atualiza a exibição das vendas marcadas
+        exibirVendasMarcadas();
+
+        alert("Venda marcada com sucesso!");
+    }
+
+    // Função para exibir as vendas marcadas
+    function exibirVendasMarcadas() {
+        const listaVendas = document.getElementById('lista-vendas-marcadas');
+        listaVendas.innerHTML = ''; // Limpa a lista atual
+
+        // Recupera as vendas marcadas do localStorage
+        const vendasMarcadas = JSON.parse(localStorage.getItem('vendasMarcadas')) || [];
+
+        // Adiciona cada venda marcada à lista
+        vendasMarcadas.forEach((venda, index) => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `
+                ${venda.cliente}
+                <button class="btn btn-sm btn-primary" onclick="carregarVendaMarcada(${index})">
+                    <i class="bi bi-arrow-repeat"></i> Carregar
+                </button>
+            `;
+            listaVendas.appendChild(li);
+        });
+    }
+
+    // Função para carregar uma venda marcada
+    function carregarVendaMarcada(index) {
+        const vendasMarcadas = JSON.parse(localStorage.getItem('vendasMarcadas')) || [];
+        const venda = vendasMarcadas[index];
+
+        // Preenche o nome do cliente
+        document.getElementById('cliente').value = venda.cliente;
+
+        // Limpa o carrinho atual e carrega os itens da venda marcada
+        carrinho = [...venda.itens];
+        total = carrinho.reduce((acc, item) => acc + item.preco * item.quantidade, 0);
+        atualizarCarrinho();
+
+        // Marca os botões dos produtos selecionados
+        carrinho.forEach(item => {
+            const botao = document.querySelector(`.produto-btn[onclick*="'${item.id}'"]`);
+            if (botao) {
+                botao.classList.add('marcado');
+            }
+        });
+
+        // Define o índice da venda marcada carregada
+        vendaMarcadaIndex = index;
+
+        alert("Venda carregada com sucesso!");
+    }
+
+    // Função para remover uma venda marcada do localStorage
+    function removerVendaMarcada(index) {
+        let vendasMarcadas = JSON.parse(localStorage.getItem('vendasMarcadas')) || [];
+        vendasMarcadas.splice(index, 1); // Remove a venda marcada
+        localStorage.setItem('vendasMarcadas', JSON.stringify(vendasMarcadas)); // Atualiza o localStorage
+        exibirVendasMarcadas(); // Atualiza a exibição
+    }
+
+    // Exibe as vendas marcadas ao carregar a página
+    window.onload = () => {
+        exibirVendasMarcadas();
+    };
+</script>
+{% endblock %}

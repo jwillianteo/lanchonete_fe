@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Estoque - Lanchonete{% endblock %}
+
+{% block extra_css %}
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+    th {
+        background-color: #f8f9fa;
+    }
+    input[type="number"] {
+        width: 80px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .btn-atualizar {
+        margin-left: 10px;
+    }
+    .btn-excluir {
+        margin-left: 10px; /* Espaçamento entre os botões */
+    }
+
+    /* Ajustes para tablets */
+    @media (max-width: 1024px) {
+        th, td {
+            padding: 12px; /* Aumentar padding das células */
+            font-size: 16px; /* Aumentar fonte */
+        }
+        input[type="number"] {
+            width: 100px; /* Aumentar largura do input */
+            padding: 8px; /* Aumentar padding */
+            font-size: 16px; /* Aumentar fonte */
+        }
+        .btn-atualizar, .btn-excluir {
+            font-size: 16px; /* Aumentar fonte dos botões */
+            padding: 8px 12px; /* Aumentar padding dos botões */
+        }
+    }
+
+    /* Ajustes para telas muito pequenas (smartphones) */
+    @media (max-width: 768px) {
+        th, td {
+            padding: 8px;
+            font-size: 14px;
+        }
+        input[type="number"] {
+            width: 80px;
+            padding: 6px;
+            font-size: 14px;
+        }
+        .btn-atualizar, .btn-excluir {
+            font-size: 14px;
+            padding: 6px 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <h1 class="text-center mb-4">Estoque</h1>
+        
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Preço</th>
+                    <th>Valor de Compra</th>
+                    <th>Quantidade</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produto in produtos %}
+                    <tr>
+                        <td>{{ produto.nome }}</td>
+                        <td>R$ {{ "%.2f"|format(produto.preco) }}</td>
+                        <td>R$ {{ "%.2f"|format(produto.valor_compra) }}</td>
+                        <td>
+                            <input type="number" id="quantidade-{{ produto.id }}" value="{{ produto.quantidade }}" min="0">
+                        </td>
+                        <td>
+                            <button class="btn btn-primary btn-atualizar" onclick="atualizarEstoque({{ produto.id }})">
+                                Atualizar
+                            </button>
+                            <button class="btn btn-danger btn-excluir" onclick="excluirProduto({{ produto.id }})">
+                                <i class="bi bi-trash"></i> Excluir
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Função para atualizar o estoque de um produto
+    function atualizarEstoque(produtoId) {
+        const quantidadeInput = document.getElementById(`quantidade-${produtoId}`);
+        const novaQuantidade = parseInt(quantidadeInput.value);
+
+        if (isNaN(novaQuantidade)) {
+            alert("Quantidade inválida!");
+            return;
+        }
+
+        fetch(`/atualizar_estoque/${produtoId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quantidade: novaQuantidade })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Estoque atualizado com sucesso!");
+                window.location.reload();  // Recarregar a página para atualizar os dados
+            } else {
+                alert("Erro ao atualizar estoque: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert("Erro ao processar a requisição");
+        });
+    }
+
+    // Função para excluir um produto
+    function excluirProduto(produtoId) {
+        if (confirm("Tem certeza que deseja excluir este produto?")) {
+            fetch(`/excluir_produto/${produtoId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Produto excluído com sucesso!");
+                    window.location.reload(); // Recarregar a página para atualizar a lista
+                } else {
+                    alert("Erro ao excluir produto: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert("Erro ao processar a requisição");
+            });
+        }
+    }
+</script>
+{% endblock %}

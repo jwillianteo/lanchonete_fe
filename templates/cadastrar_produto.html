@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastrar Produto - Lanchonete{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Ajustes para tablets */
+    @media (max-width: 1024px) {
+        .form-control {
+            font-size: 16px; /* Aumentar fonte dos inputs */
+            padding: 10px; /* Aumentar padding para facilitar o toque */
+        }
+        .btn {
+            font-size: 16px; /* Aumentar fonte dos botões */
+            padding: 10px 15px; /* Aumentar padding dos botões */
+        }
+        .card-body {
+            padding: 15px; /* Aumentar padding interno dos cards */
+        }
+    }
+
+    /* Ajustes para telas muito pequenas (smartphones) */
+    @media (max-width: 768px) {
+        .form-control {
+            font-size: 14px;
+            padding: 8px;
+        }
+        .btn {
+            font-size: 14px;
+            padding: 8px 12px;
+        }
+        .card-body {
+            padding: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="text-center mb-4">Cadastrar Produto</h1>
+        
+        <form method="POST" action="{{ url_for('cadastrar_produto') }}">
+            <div class="mb-3">
+                <label for="nome" class="form-label">Nome do Produto</label>
+                <input type="text" class="form-control" id="nome" name="nome" required>
+            </div>
+            <div class="mb-3">
+                <label for="preco" class="form-label">Preço</label>
+                <input type="number" step="0.01" class="form-control" id="preco" name="preco" required>
+            </div>
+            <div class="mb-3">
+                <label for="valor_compra" class="form-label">Valor de Compra</label>
+                <input type="number" step="0.01" class="form-control" id="valor_compra" name="valor_compra" required>
+            </div>
+            <div class="mb-3">
+                <label for="quantidade" class="form-label">Quantidade</label>
+                <input type="number" class="form-control" id="quantidade" name="quantidade" required>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Cadastrar</button>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">Voltar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

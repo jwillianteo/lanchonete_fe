@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Página Inicial - Lanchonete{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Ajustes para tablets */
+    @media (max-width: 1024px) {
+        .card {
+            margin-bottom: 20px; /* Aumentar espaçamento entre os cards */
+        }
+        .card-title {
+            font-size: 20px; /* Aumentar fonte do título */
+        }
+        .card-text {
+            font-size: 16px; /* Aumentar fonte do texto */
+        }
+        .btn-lg {
+            font-size: 18px; /* Aumentar fonte dos botões */
+            padding: 12px 20px; /* Aumentar padding dos botões */
+        }
+    }
+
+    /* Ajustes para telas muito pequenas (smartphones) */
+    @media (max-width: 768px) {
+        .card-title {
+            font-size: 18px;
+        }
+        .card-text {
+            font-size: 14px;
+        }
+        .btn-lg {
+            font-size: 16px;
+            padding: 10px 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="mb-4">Bem-vindo à Lanchonete</h1>
+    <img src="{{ url_for('static', filename='images/logo-cael.jpg') }}" 
+         alt="Logo da Lanchonete" 
+         class="img-fluid mb-4" 
+         style="max-width: 200px;">
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+    <div class="col">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <h5 class="card-title">Vendas</h5>
+                <p class="card-text">Realizar novas vendas e gerenciar o caixa</p>
+                <a href="{{ url_for('vendas') }}" class="btn btn-success btn-lg w-100">
+                    <i class="bi bi-cart"></i> Vendas
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <h5 class="card-title">Estoque</h5>
+                <p class="card-text">Gerenciar produtos e controlar estoque</p>
+                <a href="{{ url_for('estoque') }}" class="btn btn-primary btn-lg w-100">
+                    <i class="bi bi-box"></i> Estoque
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <h5 class="card-title">Cadastrar Produto</h5>
+                <p class="card-text">Adicionar novos produtos ao sistema</p>
+                <a href="{{ url_for('cadastrar_produto') }}" class="btn btn-warning btn-lg w-100">
+                    <i class="bi bi-plus-circle"></i> Cadastrar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
