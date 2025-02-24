@@ -7,7 +7,11 @@ import os  # Importar o módulo os para acessar variáveis de ambiente
 app = Flask(__name__)
 
 # Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///lanchonete.db')
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///lanchonete.db')
+# Remover prefixo "DATABASE_URL=" se estiver presente
+if database_url.startswith('DATABASE_URL='):
+    database_url = database_url[len('DATABASE_URL='):]
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Desabilitar rastreamento de modificações
 db = SQLAlchemy(app)
 
@@ -164,6 +168,10 @@ def relatorio_vendas():
 
     relatorio.sort(key=lambda x: x['total_item'], reverse=True)
 
+    # Verificar se o diretório 'static' existe, se não, criar
+    if not os.path.exists('static'):
+        os.makedirs('static')
+
     wb = Workbook()
     ws = wb.active
     ws.title = "Relatório de Vendas"
@@ -190,6 +198,10 @@ def relatorio_estoque():
             'quantidade_atual': produto.quantidade
         })
 
+    # Verificar se o diretório 'static' existe, se não, criar
+    if not os.path.exists('static'):
+        os.makedirs('static')
+
     wb = Workbook()
     ws = wb.active
     ws.title = "Relatório de Estoque"
@@ -207,4 +219,5 @@ def relatorio_estoque():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
