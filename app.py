@@ -26,6 +26,7 @@ db = SQLAlchemy(app)
 
 # Modelo de Produto
 class Produto(db.Model):
+    __tablename__ = 'produto'  # Especificar explicitamente o nome da tabela
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
     preco = db.Column(db.Float, nullable=False)
@@ -35,6 +36,7 @@ class Produto(db.Model):
 
 # Modelo de Venda
 class Venda(db.Model):
+    __tablename__ = 'venda'  # Especificar explicitamente o nome da tabela
     id = db.Column(db.Integer, primary_key=True)
     cliente = db.Column(db.String(100), nullable=False)
     data_venda = db.Column(db.DateTime, default=datetime.utcnow)
@@ -42,10 +44,20 @@ class Venda(db.Model):
 
 # Modelo de ItemVenda
 class ItemVenda(db.Model):
+    __tablename__ = 'item_venda'  # Especificar explicitamente o nome da tabela
     id = db.Column(db.Integer, primary_key=True)
     produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=False)
     quantidade = db.Column(db.Integer, nullable=False)
     venda_id = db.Column(db.Integer, db.ForeignKey('venda.id'), nullable=False)
+
+# Inicializar o banco de dados
+with app.app_context():
+    try:
+        logger.info("Tentando criar tabelas...")
+        db.create_all()
+        logger.info("Tabelas criadas com sucesso!")
+    except Exception as e:
+        logger.error(f"Erro ao criar tabelas: {e}")
 
 # Rota da Página Inicial
 @app.route('/')
@@ -258,11 +270,7 @@ def relatorio_estoque():
         logger.error(f"Erro ao gerar relatório de estoque: {e}")
         return jsonify({'success': False, 'message': 'Erro ao gerar relatório de estoque'}), 500
 
-# Inicialização do Banco de Dados e Execução do App
+# Execução do App
 if __name__ == '__main__':
-    with app.app_context():
-        logger.info("Criando tabelas...")
-        db.create_all()
-        logger.info("Tabelas criadas com sucesso!")
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
